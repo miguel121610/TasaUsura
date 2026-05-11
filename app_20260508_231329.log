@@ -1,0 +1,255 @@
+2026-05-08 23:13:34,701 - INFO - Conectando a MySQL...
+2026-05-08 23:13:34,732 - INFO - Ejecutando consulta SQL...
+2026-05-08 23:13:34,741 - ERROR - Error al conectar o consultar BD: Execution failed on sql '
+            SELECT
+    s.id_solicitud,
+    c.numero                          AS num_cliente,
+    c.nombres_apellidos,
+    c.cedula,
+    c.telefono_celular,
+    c.ciudad_ng                       AS ciudad,
+    s.inicial_actual                  AS monto_solicitado,
+    s.meses_actual                    AS plazo_meses,
+    s.cuota_actual                    AS cuota,
+    s.ventas_actual,
+    s.liq_disp_actual                 AS liquidez_disponible,
+    s.estabilidad,
+    s.habilidad_empresarial,
+    s.acuerdo_socializacion,
+    s.firma_analista_credito,
+    s.created_at                      AS fecha_solicitud
+FROM solicitudes s
+JOIN clientes c ON c.id_cliente = s.id_cliente
+ORDER BY s.id_solicitud;
+
+-- ── 2. Ficha de visita completa por solicitud ────────────────
+SELECT
+    fv.id_ficha,
+    fv.ref,
+    c.nombres_apellidos               AS cliente,
+    c.cedula,
+    fv.actividad,
+    fv.nombre_micro,
+    fv.nombre_analista_visita,
+    fv.tiempo_antiguedad,
+    fv.fecha_desembolso,
+    fv.destino_credito,
+    fv.lleva_registros,
+    fv.como_entero_banco,
+    fv.fecha_ultimo_pago,
+    fv.valor_ultimo_pago,
+    fv.lugar_pago,
+    fv.zona_corresponde,
+    fv.observaciones
+FROM fichas_visita fv
+JOIN clientes c ON c.id_cliente = fv.id_cliente
+ORDER BY fv.id_ficha;
+
+-- ── 3. Resumen de créditos activos por cliente ───────────────
+SELECT
+    c.nombres_apellidos,
+    c.cedula,
+    cr.numero_credito,
+    cr.tipo,
+    cr.monto_inicial,
+    cr.monto_actual                   AS saldo_actual,
+    cr.pmt                            AS cuota_mensual,
+    cr.meses,
+    cr.fecha_desembolso,
+    cr.analista_actual,
+    cr.analista_cartera,
+    cr.dias_mora,
+    cr.ultima_fecha_pago,
+    cr.edad_cliente,
+    cr.atributo
+FROM creditos cr
+JOIN clientes c ON c.id_cliente = cr.id_cliente
+ORDER BY c.nombres_apellidos, cr.fecha_desembolso;
+
+-- ── 4. Análisis de flujo financiero (Anterior vs Actual) ─────
+SELECT
+    c.nombres_apellidos,
+    s.ventas_anterior,   s.ventas_actual,
+    s.compras_anterior,  s.compras_actual,
+    s.gastos_gen_ant,    s.gastos_gen_act,
+    s.ing_liq_anterior,  s.ing_liq_actual,
+    s.liq_disp_anterior, s.liq_disp_actual,
+    s.margen_bruto_ant,  s.margen_bruto_act,
+    ROUND((s.ventas_actual - s.ventas_anterior) / NULLIF(s.ventas_anterior,0) * 100, 2)
+                                       AS crecimiento_ventas_pct,
+    ROUND((s.liq_disp_actual - s.liq_disp_anterior) / NULLIF(s.liq_disp_anterior,0) * 100, 2)
+                                       AS crecimiento_liquidez_pct
+FROM solicitudes s
+JOIN clientes c ON c.id_cliente = s.id_cliente
+ORDER BY s.id_solicitud;
+
+-- ── 5. Clientes en mora ──────────────────────────────────────
+SELECT
+    c.nombres_apellidos,
+    c.cedula,
+    c.telefono_celular,
+    cr.numero_credito,
+    cr.tipo,
+    cr.monto_actual                   AS saldo,
+    cr.dias_mora,
+    cr.ultima_fecha_pago,
+    cr.analista_cartera
+FROM creditos cr
+JOIN clientes c ON c.id_cliente = cr.id_cliente
+WHERE cr.dias_mora > 0
+ORDER BY cr.dias_mora DESC;
+
+-- ── 6. Detalle completo unificado (solicitud + visita + crédito) ──
+SELECT
+    s.id_solicitud,
+    c.numero                          AS num_cliente,
+    c.nombres_apellidos,
+    c.cedula,
+    c.ciudad_ng,
+    fv.actividad,
+    fv.nombre_micro,
+    s.inicial_actual                  AS monto_aprobado,
+    s.meses_actual                    AS plazo,
+    s.cuota_actual,
+    s.ventas_actual,
+    s.liq_disp_actual,
+    s.estabilidad,
+    s.habilidad_empresarial,
+    cr.dias_mora,
+    cr.analista_actual,
+    fv.observaciones                  AS obs_visita,
+    s.observaciones                   AS obs_solicitud
+FROM solicitudes s
+JOIN clientes      c  ON c.id_cliente   = s.id_cliente
+LEFT JOIN fichas_visita fv ON fv.id_solicitud = s.id_solicitud
+LEFT JOIN creditos cr  ON cr.id_solicitud = s.id_solicitud
+                       AND cr.monto_actual = s.inicial_actual
+ORDER BY s.id_solicitud;
+            ': (pymysql.err.ProgrammingError) (1064, "You have an error in your SQL syntax; check the manual that corresponds to your MariaDB server version for the right syntax to use near 'SELECT\n    fv.id_ficha,\n    fv.ref,\n    c.nombres_apellidos               AS ...' at line 23")
+[SQL: 
+            SELECT
+    s.id_solicitud,
+    c.numero                          AS num_cliente,
+    c.nombres_apellidos,
+    c.cedula,
+    c.telefono_celular,
+    c.ciudad_ng                       AS ciudad,
+    s.inicial_actual                  AS monto_solicitado,
+    s.meses_actual                    AS plazo_meses,
+    s.cuota_actual                    AS cuota,
+    s.ventas_actual,
+    s.liq_disp_actual                 AS liquidez_disponible,
+    s.estabilidad,
+    s.habilidad_empresarial,
+    s.acuerdo_socializacion,
+    s.firma_analista_credito,
+    s.created_at                      AS fecha_solicitud
+FROM solicitudes s
+JOIN clientes c ON c.id_cliente = s.id_cliente
+ORDER BY s.id_solicitud;
+
+-- ── 2. Ficha de visita completa por solicitud ────────────────
+SELECT
+    fv.id_ficha,
+    fv.ref,
+    c.nombres_apellidos               AS cliente,
+    c.cedula,
+    fv.actividad,
+    fv.nombre_micro,
+    fv.nombre_analista_visita,
+    fv.tiempo_antiguedad,
+    fv.fecha_desembolso,
+    fv.destino_credito,
+    fv.lleva_registros,
+    fv.como_entero_banco,
+    fv.fecha_ultimo_pago,
+    fv.valor_ultimo_pago,
+    fv.lugar_pago,
+    fv.zona_corresponde,
+    fv.observaciones
+FROM fichas_visita fv
+JOIN clientes c ON c.id_cliente = fv.id_cliente
+ORDER BY fv.id_ficha;
+
+-- ── 3. Resumen de créditos activos por cliente ───────────────
+SELECT
+    c.nombres_apellidos,
+    c.cedula,
+    cr.numero_credito,
+    cr.tipo,
+    cr.monto_inicial,
+    cr.monto_actual                   AS saldo_actual,
+    cr.pmt                            AS cuota_mensual,
+    cr.meses,
+    cr.fecha_desembolso,
+    cr.analista_actual,
+    cr.analista_cartera,
+    cr.dias_mora,
+    cr.ultima_fecha_pago,
+    cr.edad_cliente,
+    cr.atributo
+FROM creditos cr
+JOIN clientes c ON c.id_cliente = cr.id_cliente
+ORDER BY c.nombres_apellidos, cr.fecha_desembolso;
+
+-- ── 4. Análisis de flujo financiero (Anterior vs Actual) ─────
+SELECT
+    c.nombres_apellidos,
+    s.ventas_anterior,   s.ventas_actual,
+    s.compras_anterior,  s.compras_actual,
+    s.gastos_gen_ant,    s.gastos_gen_act,
+    s.ing_liq_anterior,  s.ing_liq_actual,
+    s.liq_disp_anterior, s.liq_disp_actual,
+    s.margen_bruto_ant,  s.margen_bruto_act,
+    ROUND((s.ventas_actual - s.ventas_anterior) / NULLIF(s.ventas_anterior,0) * 100, 2)
+                                       AS crecimiento_ventas_pct,
+    ROUND((s.liq_disp_actual - s.liq_disp_anterior) / NULLIF(s.liq_disp_anterior,0) * 100, 2)
+                                       AS crecimiento_liquidez_pct
+FROM solicitudes s
+JOIN clientes c ON c.id_cliente = s.id_cliente
+ORDER BY s.id_solicitud;
+
+-- ── 5. Clientes en mora ──────────────────────────────────────
+SELECT
+    c.nombres_apellidos,
+    c.cedula,
+    c.telefono_celular,
+    cr.numero_credito,
+    cr.tipo,
+    cr.monto_actual                   AS saldo,
+    cr.dias_mora,
+    cr.ultima_fecha_pago,
+    cr.analista_cartera
+FROM creditos cr
+JOIN clientes c ON c.id_cliente = cr.id_cliente
+WHERE cr.dias_mora > 0
+ORDER BY cr.dias_mora DESC;
+
+-- ── 6. Detalle completo unificado (solicitud + visita + crédito) ──
+SELECT
+    s.id_solicitud,
+    c.numero                          AS num_cliente,
+    c.nombres_apellidos,
+    c.cedula,
+    c.ciudad_ng,
+    fv.actividad,
+    fv.nombre_micro,
+    s.inicial_actual                  AS monto_aprobado,
+    s.meses_actual                    AS plazo,
+    s.cuota_actual,
+    s.ventas_actual,
+    s.liq_disp_actual,
+    s.estabilidad,
+    s.habilidad_empresarial,
+    cr.dias_mora,
+    cr.analista_actual,
+    fv.observaciones                  AS obs_visita,
+    s.observaciones                   AS obs_solicitud
+FROM solicitudes s
+JOIN clientes      c  ON c.id_cliente   = s.id_cliente
+LEFT JOIN fichas_visita fv ON fv.id_solicitud = s.id_solicitud
+LEFT JOIN creditos cr  ON cr.id_solicitud = s.id_solicitud
+                       AND cr.monto_actual = s.inicial_actual
+ORDER BY s.id_solicitud;
+            ]
+(Background on this error at: https://sqlalche.me/e/20/f405)
