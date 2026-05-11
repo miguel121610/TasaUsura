@@ -1,0 +1,9 @@
+tipo_credito,modalidad,tasa_usura_ea,tasa_usura_mensual,vigencia_desde,vigencia_hasta
+Consumo y Ordinario,Consumo,26.94,2.01,2024-01-01,2024-03-31
+Consumo y Ordinario,Ordinario,26.94,2.01,2024-01-01,2024-03-31
+Microcrédito,Microcrédito,52.22,3.64,2024-01-01,2024-03-31
+Vivienda,VIS,13.92,1.10,2024-01-01,2024-03-31
+Vivienda,No VIS,13.92,1.10,2024-01-01,2024-03-31
+Preferencial y Corporativo,Preferencial,18.54,1.43,2024-01-01,2024-03-31
+Preferencial y Corporativo,Corporativo,18.54,1.43,2024-01-01,2024-03-31
+Tarjeta de Crédito,Tarjeta de Crédito,32.01,2.35,2024-01-01,2024-03-31

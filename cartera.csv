@@ -1,0 +1,13 @@
+id_credito,cliente,tipo_credito,modalidad,fecha_desembolso,saldo_capital,tasa_interes_ea,tasa_interes_mensual,fecha_corte
+001,Juan Pérez,Consumo y Ordinario,Consumo,2023-06-15,15000000,24.50,1.85,2024-02-29
+002,María López,Consumo y Ordinario,Consumo,2022-11-01,8500000,27.50,2.05,2024-02-29
+003,Carlos Gómez,Microcrédito,Microcrédito,2023-09-20,3200000,48.00,3.35,2024-02-29
+004,Ana Martínez,Microcrédito,Microcrédito,2023-12-05,1800000,55.00,3.80,2024-02-29
+005,Pedro Rodríguez,Vivienda,VIS,2021-03-10,85000000,12.50,0.99,2024-02-29
+006,Laura Sánchez,Vivienda,No VIS,2020-08-22,220000000,14.20,1.12,2024-02-29
+007,Diego Torres,Preferencial y Corporativo,Preferencial,2023-07-18,500000000,17.80,1.37,2024-02-29
+008,Sofía Ramírez,Preferencial y Corporativo,Corporativo,2023-10-30,1200000000,19.00,1.46,2024-02-29
+009,Andrés Castro,Tarjeta de Crédito,Tarjeta de Crédito,2022-05-14,4500000,30.00,2.19,2024-02-29
+010,Valentina Mora,Tarjeta de Crédito,Tarjeta de Crédito,2023-01-28,2100000,33.50,2.42,2024-02-29
+011,Felipe Herrera,Consumo y Ordinario,Ordinario,2023-03-11,12000000,25.80,1.93,2024-02-29
+012,Camila Díaz,Microcrédito,Microcrédito,2024-01-15,950000,51.00,3.60,2024-02-29

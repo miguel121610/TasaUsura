@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Informe de Verificación de Tasa de Usura</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@300;400;600;700&display=swap');
+    :root {
+      --bg:      #0d0f14; --surface: #13161e; --border: #1e2330;
+      --accent:  #00e5a0; --danger:  #ff4d6d; --warn:   #ffc845;
+      --muted:   #4a5068; --text:    #d4d8e8; --dim:    #7a8099;
+      --mono: 'IBM Plex Mono', monospace; --sans: 'IBM Plex Sans', sans-serif;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: var(--bg); color: var(--text); font-family: var(--sans);
+           font-size: 14px; line-height: 1.6; padding: 40px 28px 80px; }
+
+    /* Header */
+    .header { border-left: 3px solid var(--accent); padding-left: 20px; margin-bottom: 48px; }
+    .header .label { font-family: var(--mono); font-size: 11px; color: var(--accent);
+                     letter-spacing: .15em; text-transform: uppercase; margin-bottom: 6px; }
+    .header h1 { font-size: 26px; font-weight: 700; color: #fff; letter-spacing: -.02em; }
+    .header .meta { font-family: var(--mono); font-size: 12px; color: var(--dim); margin-top: 6px; }
+
+    /* KPIs */
+    .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(155px,1fr));
+            gap: 12px; margin-bottom: 40px; }
+    .kpi { background: var(--surface); border: 1px solid var(--border);
+           border-radius: 8px; padding: 20px 18px 16px; }
+    .kpi .kpi-label { font-family: var(--mono); font-size: 10px; color: var(--dim);
+                      letter-spacing: .12em; text-transform: uppercase; margin-bottom: 10px; }
+    .kpi .kpi-value { font-size: 34px; font-weight: 700; line-height: 1; }
+    .kpi.ok      .kpi-value { color: var(--accent); }
+    .kpi.alerta  .kpi-value { color: var(--danger); }
+    .kpi.warn    .kpi-value { color: var(--warn);   }
+    .kpi.neutral .kpi-value { color: #fff; }
+
+    /* Section title */
+    .section-title { font-family: var(--mono); font-size: 11px; letter-spacing: .15em;
+                     text-transform: uppercase; color: var(--accent); border-bottom: 1px solid var(--border);
+                     padding-bottom: 8px; margin-bottom: 20px; margin-top: 48px; }
+
+    /* Bar chart */
+    .bars { display: flex; flex-direction: column; gap: 10px; margin-bottom: 8px; }
+    .bar-row { display: flex; align-items: center; gap: 12px; }
+    .bar-name { font-size: 12px; color: var(--dim); width: 190px; flex-shrink: 0;
+                white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .bar-track { flex: 1; height: 24px; background: var(--border); border-radius: 3px; overflow: hidden; }
+    .bar-fill { height: 100%; border-radius: 3px; background: var(--danger); display: flex;
+                align-items: center; padding-left: 8px; font-family: var(--mono);
+                font-size: 11px; color: #fff; min-width: 40px; }
+    .bar-fill.safe { background: rgba(0,229,160,.25); color: var(--accent); }
+
+    /* Alert cards */
+    .alert-cards { display: flex; flex-direction: column; gap: 12px; }
+    .alert-card { background: rgba(255,77,109,.06); border: 1px solid rgba(255,77,109,.25);
+                  border-radius: 8px; padding: 16px 20px; display: grid;
+                  grid-template-columns: auto 1fr auto; gap: 0 24px; align-items: center; }
+    .alert-id { font-family: var(--mono); font-size: 20px; font-weight: 600; color: var(--danger); }
+    .alert-info .name { font-weight: 600; color: #fff; }
+    .alert-info .detail { font-size: 12px; color: var(--dim); font-family: var(--mono); margin-top: 3px; }
+    .alert-rates { text-align: right; }
+    .alert-rates .rate-pacted { font-size: 22px; font-weight: 700; color: var(--danger); font-family: var(--mono); }
+    .alert-rates .rate-limit  { font-size: 12px; color: var(--dim); font-family: var(--mono); }
+    .alert-rates .exceso { font-size: 11px; color: var(--warn); font-family: var(--mono); margin-top: 2px; }
+
+    /* Table */
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    thead th { font-family: var(--mono); font-size: 10px; letter-spacing: .1em;
+               text-transform: uppercase; color: var(--dim); border-bottom: 1px solid var(--border);
+               padding: 10px 12px; text-align: left; white-space: nowrap; }
+    tbody tr { border-bottom: 1px solid var(--border); }
+    tbody tr:hover { background: rgba(255,255,255,.025); }
+    tbody td { padding: 11px 12px; vertical-align: middle; }
+    .num { font-family: var(--mono); }
+    .pos { color: var(--danger); } .neg { color: var(--accent); }
+
+    .badge { display: inline-block; padding: 2px 9px; border-radius: 99px;
+             font-family: var(--mono); font-size: 10px; font-weight: 600; letter-spacing: .05em; }
+    .b-ok     { background: rgba(0,229,160,.12); color: var(--accent); }
+    .b-alerta { background: rgba(255,77,109,.12); color: var(--danger); }
+    .b-warn   { background: rgba(255,200,69,.12); color: var(--warn); }
+
+    /* Footer */
+    .footer { margin-top: 64px; padding-top: 20px; border-top: 1px solid var(--border);
+              font-family: var(--mono); font-size: 11px; color: var(--muted); }
+  </style>
+</head>
+<body>
+
+<div class="header">
+  <div class="label">Informe de Cumplimiento Regulatorio</div>
+  <h1>Verificación de Tasa de Usura</h1>
+  <div class="meta">
+    Generado: 2026-05-10 22:05:56 &nbsp;│&nbsp;
+    Cartera: cartera.csv &nbsp;│&nbsp;
+    Tasas: tasas_usura.csv
+  </div>
+</div>
+
+<div class="kpis">
+  <div class="kpi neutral"><div class="kpi-label">Total créditos</div><div class="kpi-value">12</div></div>
+  <div class="kpi ok">    <div class="kpi-label">Cumplen límite</div><div class="kpi-value">7</div></div>
+  <div class="kpi alerta"><div class="kpi-label">Superan usura</div><div class="kpi-value">5</div></div>
+  <div class="kpi warn">  <div class="kpi-label">Sin referencia</div><div class="kpi-value">0</div></div>
+  <div class="kpi alerta"><div class="kpi-label">% en alerta</div>  <div class="kpi-value">41.7%</div></div>
+</div>
+
+<div class="section-title">Distribución de alertas por modalidad</div>
+<div class="bars">
+  
+  <div class="bar-row">
+    <div class="bar-name" title="Consumo">Consumo</div>
+    <div class="bar-track">
+      <div class="bar-fill " style="width:66.7%">
+        1/2
+      </div>
+    </div>
+  </div>
+  
+  <div class="bar-row">
+    <div class="bar-name" title="Corporativo">Corporativo</div>
+    <div class="bar-track">
+      <div class="bar-fill " style="width:33.3%">
+        1/1
+      </div>
+    </div>
+  </div>
+  
+  <div class="bar-row">
+    <div class="bar-name" title="Microcrédito">Microcrédito</div>
+    <div class="bar-track">
+      <div class="bar-fill " style="width:100.0%">
+        1/3
+      </div>
+    </div>
+  </div>
+  
+  <div class="bar-row">
+    <div class="bar-name" title="No VIS">No VIS</div>
+    <div class="bar-track">
+      <div class="bar-fill " style="width:33.3%">
+        1/1
+      </div>
+    </div>
+  </div>
+  
+  <div class="bar-row">
+    <div class="bar-name" title="Ordinario">Ordinario</div>
+    <div class="bar-track">
+      <div class="bar-fill safe" style="width:33.3%">
+        0/1
+      </div>
+    </div>
+  </div>
+  
+  <div class="bar-row">
+    <div class="bar-name" title="Preferencial">Preferencial</div>
+    <div class="bar-track">
+      <div class="bar-fill safe" style="width:33.3%">
+        0/1
+      </div>
+    </div>
+  </div>
+  
+  <div class="bar-row">
+    <div class="bar-name" title="Tarjeta de Crédito">Tarjeta de Crédito</div>
+    <div class="bar-track">
+      <div class="bar-fill " style="width:66.7%">
+        1/2
+      </div>
+    </div>
+  </div>
+  
+  <div class="bar-row">
+    <div class="bar-name" title="VIS">VIS</div>
+    <div class="bar-track">
+      <div class="bar-fill safe" style="width:33.3%">
+        0/1
+      </div>
+    </div>
+  </div>
+  
+</div>
+
+
+<div class="section-title">Créditos que superan la tasa de usura (5)</div>
+<div class="alert-cards">
+  
+  <div class="alert-card">
+    <div class="alert-id">#2</div>
+    <div class="alert-info">
+      <div class="name">María López</div>
+      <div class="detail">Consumo &nbsp;│&nbsp; Corte: 2024-02-29</div>
+    </div>
+    <div class="alert-rates">
+      <div class="rate-pacted">27.50% EA</div>
+      <div class="rate-limit">Límite: 26.94% EA</div>
+      <div class="exceso">+0.56% exceso</div>
+    </div>
+  </div>
+  
+  <div class="alert-card">
+    <div class="alert-id">#4</div>
+    <div class="alert-info">
+      <div class="name">Ana Martínez</div>
+      <div class="detail">Microcrédito &nbsp;│&nbsp; Corte: 2024-02-29</div>
+    </div>
+    <div class="alert-rates">
+      <div class="rate-pacted">55.00% EA</div>
+      <div class="rate-limit">Límite: 52.22% EA</div>
+      <div class="exceso">+2.78% exceso</div>
+    </div>
+  </div>
+  
+  <div class="alert-card">
+    <div class="alert-id">#6</div>
+    <div class="alert-info">
+      <div class="name">Laura Sánchez</div>
+      <div class="detail">No VIS &nbsp;│&nbsp; Corte: 2024-02-29</div>
+    </div>
+    <div class="alert-rates">
+      <div class="rate-pacted">14.20% EA</div>
+      <div class="rate-limit">Límite: 13.92% EA</div>
+      <div class="exceso">+0.28% exceso</div>
+    </div>
+  </div>
+  
+  <div class="alert-card">
+    <div class="alert-id">#8</div>
+    <div class="alert-info">
+      <div class="name">Sofía Ramírez</div>
+      <div class="detail">Corporativo &nbsp;│&nbsp; Corte: 2024-02-29</div>
+    </div>
+    <div class="alert-rates">
+      <div class="rate-pacted">19.00% EA</div>
+      <div class="rate-limit">Límite: 18.54% EA</div>
+      <div class="exceso">+0.46% exceso</div>
+    </div>
+  </div>
+  
+  <div class="alert-card">
+    <div class="alert-id">#10</div>
+    <div class="alert-info">
+      <div class="name">Valentina Mora</div>
+      <div class="detail">Tarjeta de Crédito &nbsp;│&nbsp; Corte: 2024-02-29</div>
+    </div>
+    <div class="alert-rates">
+      <div class="rate-pacted">33.50% EA</div>
+      <div class="rate-limit">Límite: 32.01% EA</div>
+      <div class="exceso">+1.49% exceso</div>
+    </div>
+  </div>
+  
+</div>
+
+
+<div class="section-title">Detalle completo de la cartera</div>
+<div class="table-wrap">
+  <table>
+    <thead>
+      <tr>
+        <th>ID</th><th>Cliente</th><th>Modalidad</th><th>Corte</th>
+        <th>Tasa EA %</th><th>Usura EA %</th><th>Diferencia</th>
+        <th>Tasa Men %</th><th>Usura Men %</th>
+        <th>Estado EA</th><th>Estado Men</th>
+      </tr>
+    </thead>
+    <tbody>
+      
+      <tr>
+        <td class="num">1</td>
+        <td>Juan Pérez</td>
+        <td>Consumo</td>
+        <td class="num">2024-02-29</td>
+        <td class="num">24.50</td>
+        <td class="num">26.94</td>
+        <td class="num neg">-2.44</td>
+        <td class="num">1.85</td>
+        <td class="num">2.01</td>
+        <td>
+          <span class="badge b-ok">✔ OK</span>
+          
+        </td>
+        <td>
+          <span class="badge b-ok">✔ OK</span>
+          
+        </td>
+      </tr>
+      
+      <tr>
+        <td class="num">2</td>
+        <td>María López</td>
+        <td>Consumo</td>
+        <td class="num">2024-02-29</td>
+        <td class="num">27.50</td>
+        <td class="num">26.94</td>
+        <td class="num pos">0.56</td>
+        <td class="num">2.05</td>
+        <td class="num">2.01</td>
+        <td>
+          <span class="badge b-alerta">⚠ SUPERA</span>
+          
+        </td>
+        <td>
+          <span class="badge b-alerta">⚠ SUPERA</span>
+          
+        </td>
+      </tr>
+      
+      <tr>
+        <td class="num">3</td>
+        <td>Carlos Gómez</td>
+        <td>Microcrédito</td>
+        <td class="num">2024-02-29</td>
+        <td class="num">48.00</td>
+        <td class="num">52.22</td>
+        <td class="num neg">-4.22</td>
+        <td class="num">3.35</td>
+        <td class="num">3.64</td>
+        <td>
+          <span class="badge b-ok">✔ OK</span>
+          
+        </td>
+        <td>
+          <span class="badge b-ok">✔ OK</span>
+          
+        </td>
+      </tr>
+      
+      <tr>
+        <td class="num">4</td>
+        <td>Ana Martínez</td>
+        <td>Microcrédito</td>
+        <td class="num">2024-02-29</td>
+        <td class="num">55.00</td>
+        <td class="num">52.22</td>
+        <td class="num pos">2.78</td>
+        <td class="num">3.80</td>
+        <td class="num">3.64</td>
+        <td>
+          <span class="badge b-alerta">⚠ SUPERA</span>
+          
+        </td>
+        <td>
+          <span class="badge b-alerta">⚠ SUPERA</span>
+          
+        </td>
+      </tr>
+      
+      <tr>
+        <td class="num">5</td>
+        <td>Pedro Rodríguez</td>
+        <td>VIS</td>
+        <td class="num">2024-02-29</td>
+        <td class="num">12.50</td>
+        <td class="num">13.92</td>
+        <td class="num neg">-1.42</td>
+        <td class="num">0.99</td>
+        <td class="num">1.10</td>
+        <td>
+          <span class="badge b-ok">✔ OK</span>
+          
+        </td>
+        <td>
+          <span class="badge b-ok">✔ OK</span>
+          
+        </td>
+      </tr>
+      
+      <tr>
+        <td class="num">6</td>
+        <td>Laura Sánchez</td>
+        <td>No VIS</td>
+        <td class="num">2024-02-29</td>
+        <td class="num">14.20</td>
+        <td class="num">13.92</td>
+        <td class="num pos">0.28</td>
+        <td class="num">1.12</td>
+        <td class="num">1.10</td>
+        <td>
+          <span class="badge b-alerta">⚠ SUPERA</span>
+          
+        </td>
+        <td>
+          <span class="badge b-alerta">⚠ SUPERA</span>
+          
+        </td>
+      </tr>
+      
+      <tr>
+        <td class="num">7</td>
+        <td>Diego Torres</td>
+        <td>Preferencial</td>
+        <td class="num">2024-02-29</td>
+        <td class="num">17.80</td>
+        <td class="num">18.54</td>
+        <td class="num neg">-0.74</td>
+        <td class="num">1.37</td>
+        <td class="num">1.43</td>
+        <td>
+          <span class="badge b-ok">✔ OK</span>
+          
+        </td>
+        <td>
+          <span class="badge b-ok">✔ OK</span>
+          
+        </td>
+      </tr>
+      
+      <tr>
+        <td class="num">8</td>
+        <td>Sofía Ramírez</td>
+        <td>Corporativo</td>
+        <td class="num">2024-02-29</td>
+        <td class="num">19.00</td>
+        <td class="num">18.54</td>
+        <td class="num pos">0.46</td>
+        <td class="num">1.46</td>
+        <td class="num">1.43</td>
+        <td>
+          <span class="badge b-alerta">⚠ SUPERA</span>
+          
+        </td>
+        <td>
+          <span class="badge b-alerta">⚠ SUPERA</span>
+          
+        </td>
+      </tr>
+      
+      <tr>
+        <td class="num">9</td>
+        <td>Andrés Castro</td>
+        <td>Tarjeta de Crédito</td>
+        <td class="num">2024-02-29</td>
+        <td class="num">30.00</td>
+        <td class="num">32.01</td>
+        <td class="num neg">-2.01</td>
+        <td class="num">2.19</td>
+        <td class="num">2.35</td>
+        <td>
+          <span class="badge b-ok">✔ OK</span>
+          
+        </td>
+        <td>
+          <span class="badge b-ok">✔ OK</span>
+          
+        </td>
+      </tr>
+      
+      <tr>
+        <td class="num">10</td>
+        <td>Valentina Mora</td>
+        <td>Tarjeta de Crédito</td>
+        <td class="num">2024-02-29</td>
+        <td class="num">33.50</td>
+        <td class="num">32.01</td>
+        <td class="num pos">1.49</td>
+        <td class="num">2.42</td>
+        <td class="num">2.35</td>
+        <td>
+          <span class="badge b-alerta">⚠ SUPERA</span>
+          
+        </td>
+        <td>
+          <span class="badge b-alerta">⚠ SUPERA</span>
+          
+        </td>
+      </tr>
+      
+      <tr>
+        <td class="num">11</td>
+        <td>Felipe Herrera</td>
+        <td>Ordinario</td>
+        <td class="num">2024-02-29</td>
+        <td class="num">25.80</td>
+        <td class="num">26.94</td>
+        <td class="num neg">-1.14</td>
+        <td class="num">1.93</td>
+        <td class="num">2.01</td>
+        <td>
+          <span class="badge b-ok">✔ OK</span>
+          
+        </td>
+        <td>
+          <span class="badge b-ok">✔ OK</span>
+          
+        </td>
+      </tr>
+      
+      <tr>
+        <td class="num">12</td>
+        <td>Camila Díaz</td>
+        <td>Microcrédito</td>
+        <td class="num">2024-02-29</td>
+        <td class="num">51.00</td>
+        <td class="num">52.22</td>
+        <td class="num neg">-1.22</td>
+        <td class="num">3.60</td>
+        <td class="num">3.64</td>
+        <td>
+          <span class="badge b-ok">✔ OK</span>
+          
+        </td>
+        <td>
+          <span class="badge b-ok">✔ OK</span>
+          
+        </td>
+      </tr>
+      
+    </tbody>
+  </table>
+</div>
+
+<div class="footer">
+  Generado por verificar_usura.py &nbsp;│&nbsp;
+  Tasas certificadas por la Superintendencia Financiera de Colombia &nbsp;│&nbsp;
+  2026-05-10 22:05:56
+</div>
+</body>
+</html>
